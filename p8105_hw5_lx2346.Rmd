@@ -9,20 +9,6 @@ output: github_document
 library(ggplot2)
 library(tidyverse)
 library(purrr)
-knitr::opts_chunk$set(
-  fig.width = 6,
-  fig.asp = .6,
-  out.width = "90%"
-)
-
-theme_set(theme_minimal()+theme(legend.position = "bottom"))
-
-options(
-  ggplot2.continuous.colour = "viridis",
-  ggplot2.continuous.fill = "viridis")
-
-scale_colour_discrete = scale_colour_viridis_d
-scale_fill_discrete = scale_fill_viridis_d
 ```
 
 ## Problem 1
@@ -108,6 +94,31 @@ sim_res_3 |>
   scale_x_continuous(breaks = seq(1, 6, by = 1))
 ```
 
+### Make a plot showing the average estimate of 𝜇̂ on the y axis and the true value of 𝜇 on the x axis + a second plot showing the average estimate of 𝜇̂ only in samples for which the null was rejected on the y axis and the true value of 𝜇 on the x axis.
+```{r}
+mean_mu = sim_res_3 |>
+  group_by(n) |>
+  summarize(mean_mu = mean(mu_hat))
+
+mean_mu_rej = sim_res_3 |>
+  filter(p_value < 0.05) |>
+  group_by(n) |>
+  summarize(mean_mu_rej = mean(mu_hat))
+
+mu_df = left_join(mean_mu, mean_mu_rej, by = "n")
+
+mu_df |>
+  ggplot(aes(x = n)) +
+  geom_line(aes(y = mean_mu, color = "Average μ̂"), size = 1 )+
+  geom_point(aes(y = mean_mu), shape = 1, size = 3) +
+  geom_line(aes(y = mean_mu_rej,color = "Average μ̂ (Null Rejected)"),size = 1)+
+  geom_point(aes(y = mean_mu_rej), shape = 2, size = 3) +
+  labs(title = "Average Estimate of μ̂ vs True Value of μ",
+       x = "True Value of μ",
+       y = "Average Estimate of μ̂",
+       color = "Legend") +
+  
+```
 
 
 
