@@ -48,7 +48,7 @@ sim_res |>
 normal_sim = function(miu = 0, sample_size = 30, sigma = 5) {
   sim_data = tibble(x_vec = rnorm(sample_size, miu , sigma))
   
-  test_result = t.test(sim_data$x_vec, mu = miu)
+  test_result = t.test(sim_data$x_vec, mu = 0)
   res_clean = broom::tidy(test_result)
   
   out_df = tibble(mu_hat = res_clean$estimate,
@@ -93,6 +93,7 @@ sim_res_3 |>
   theme(plot.title = element_text(hjust = 0.5)) +
   scale_x_continuous(breaks = seq(1, 6, by = 1))
 ```
+**Describe the association between effect size and power**: The effect size is the difference between the true mean μ and the null hypothesis (0). As we can see from the plot, there is a positive association between effect size and power. As the effect size increases, the power of the statistical test also increases. This is because larger effect sizes are easier to detect against the backdrop of variability in the data.
 
 ### Make a plot showing the average estimate of 𝜇̂ on the y axis and the true value of 𝜇 on the x axis + a second plot showing the average estimate of 𝜇̂ only in samples for which the null was rejected on the y axis and the true value of 𝜇 on the x axis.
 ```{r}
@@ -109,17 +110,21 @@ mu_df = left_join(mean_mu, mean_mu_rej, by = "n")
 
 mu_df |>
   ggplot(aes(x = n)) +
-  geom_line(aes(y = mean_mu, color = "Average μ̂"), size = 1 )+
+  geom_line(aes(y = mean_mu, color = "Average μ̂"), size = 1.5 )+
   geom_point(aes(y = mean_mu), shape = 1, size = 3) +
-  geom_line(aes(y = mean_mu_rej,color = "Average μ̂ (Null Rejected)"),size = 1)+
+  geom_line(aes(y = mean_mu_rej,color = "Average μ̂ (Null Rejected)"))+
   geom_point(aes(y = mean_mu_rej), shape = 2, size = 3) +
   labs(title = "Average Estimate of μ̂ vs True Value of μ",
        x = "True Value of μ",
        y = "Average Estimate of μ̂",
        color = "Legend") +
-  
-```
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks = seq(1, 6, by = 1)) +
+  scale_y_continuous(breaks = seq(1, 6, by = 1))
 
+```
+\
+**Comment**: It can be observed that as the true value of μ increases, the average μ̂ gradually approaches the average μ̂ (Null Rejected). This indicates that with an increase in effect size, more samples are being rejected, meaning that the power of the test is gradually increasing.
 
 
 
