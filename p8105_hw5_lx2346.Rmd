@@ -126,6 +126,86 @@ mu_df |>
 \
 **Comment**: It can be observed that as the true value of μ increases, the average μ̂ gradually approaches the average μ̂ (Null Rejected). This indicates that with an increase in effect size, more samples are being rejected, meaning that the power of the test is gradually increasing.
 
+## Problem 3
+First, import the raw data.
+```{r}
+homicides = read_csv("./data/homicide-data.csv", na = c(".", "", "NA"))
+head(homicides,6)
+```
+### Describe the raw data
+The dataset contains 52,179 entries with 12 columns.Variables are summarized as follows:\
+1. uid: Unique identifier for each case.\
+2. reported_date: Date of death report.\
+3. victim_last and victim_first: Last and first names of the victim.\
+4. victim_race, victim_age, victim_sex\
+5. city and state\
+6. lat and lon: Latitude and longitude coordinates for the location.\
+7. disposition: Outcome status of the case.\
+
+### Create a city_state variable and then summarize within cities to obtain the total number of homicides and the number of unsolved homicides
+```{r}
+homicides = homicides |>
+  mutate(city_state = paste(city, state, sep = ", ")) 
+
+total_vs_unsolved = homicides |>
+  group_by(city_state) |>
+  summarize(
+    total_homicides = n(),
+    unsolved_homicides = sum(disposition %in% c("Closed without arrest", "Open/No arrest"))
+  )
+
+total_vs_unsolved
+```
+
+### Test for Baltimore, MD
+```{r}
+baltimore = total_vs_unsolved |>
+  filter(city_state == "Baltimore, MD")
+baltimore_res = prop.test(baltimore$unsolved_homicides, baltimore$total_homicides)
+baltimore_tidy = broom::tidy(baltimore_res)
+tibble(estimated_proportion = baltimore_tidy$estimate, 
+       confidence_interval_lower = baltimore_tidy$conf.low,
+       confidence_interval_higher = baltimore_tidy$conf.high)
+```
+### Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each.
+```{r}
+prop_sim = function(unsolved, total) {
+  
+  test_result = prop.test(unsolved, total)
+  res_clean = broom::tidy(test_result)
+  
+  out_df = tibble(estimated_proportion = res_clean$estimate,
+                  confidence_interval_lower = res_clean$conf.low,
+                  confidence_interval_higher = res_clean$conf.high)
+  
+  return(out_df)
+}
+```
+
+```{r}
+total_vs_unsolved = total_vs_unsolved |>
+  mutate(
+    city_res = map2(unsolved_homicides, total_homicides, \(x,y) prop_sim(unsolved = x, total = y))
+  ) |>
+  unnest(city_res)
+```
+
+### Create a plot that shows the estimates and CIs for each city
+```{r}
+total_vs_unsolved |>
+  ggplot( aes(x = reorder(city_state, estimated_proportion), y = estimated_proportion)) +
+  geom_point(size = 1.5, color = "#4c6d9a") + 
+  geom_errorbar(aes(ymin = confidence_interval_lower, 
+                    ymax = confidence_interval_higher), 
+                width = 1, color = "#dca199") + 
+  labs(x = "City", 
+       y = "Estimated Proportion of Unsolved Homicides",
+       title = "Estimates and Confidence Intervals for Unsolved Homicides by City") +
+  theme_minimal() +
+  coord_flip() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
 
 
 
